@@ -9,6 +9,11 @@
       ansible.builtin.set_fact:
         pp_folder: "{{ create_stack_response.json | community.general.json_query('ProjectPath') }}" # noqa: jinja[invalid]
 
+    - name: Wait for restart of container, 20 seconds should do it
+      ansible.builtin.wait_for:
+        timeout: 20
+      delegate_to: localhost
+
     - name: Run the command that will create the initdb script
       community.docker.docker_container_exec:
         container: guacamole_compose
