@@ -1,6 +1,6 @@
 ---
 # Role settings
-configure_settings: false
+configure_settings: true
 configure_registry: false
 remove_persistent_data: false
 remove_existing_container: false
@@ -15,14 +15,15 @@ auth_method: 1
 
 # Portainer version
 # Note that 'latest' will get you 2.19.x - the tag seems to be behind
-version: 2.33.1
+version: 2.34.0
 
 # Misc settings
 company_logo_url: url_to_company_logo
 # templates_url: https://raw.githubusercontent.com/portainer/templates/master/templates.json
 templates_url: https://raw.githubusercontent.com/pi-hosted/pi-hosted/master/template/portainer-v2-arm64.json
-allow_bindmounts_users: true
-allow_privileged_users: true
+# following settings as string because of Jinja2 parsing issues with booleans
+allow_bindmounts_users: "true"
+allow_privileged_users: "true"
 
 # Networking
 host_port: 9443
