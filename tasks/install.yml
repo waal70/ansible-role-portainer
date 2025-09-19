@@ -18,6 +18,11 @@
       - "{{ persistent_data_path }}"
   register: portainer_docker
 
+- name: Ensure presence of cifs-utils for volume mappings
+  ansible.builtin.package:
+    name: cifs-utils
+    state: present
+
 - name: Set fact for container state
   ansible.builtin.set_fact:
     portainer_is_running: "{{ portainer_docker.container.State.Running }}"
