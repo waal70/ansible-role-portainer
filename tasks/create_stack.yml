@@ -81,7 +81,7 @@
     body:
       name: "{{ stack_name }}"
       fromAppTemplate: false
-      StackFileContent: "{{ stack_compose }}"
+      stackFileContent: "{{ stack_compose }}"
     validate_certs: false
     timeout: 300 # Some stack creation can be quite time-consuming
   register: create_stack_response
