@@ -23,6 +23,14 @@
     name: cifs-utils
     state: present
 
+- name: "Ensure the shared network 'reverse-proxy' exists to enable reverse proxying"
+  community.docker.docker_network:
+    name: reverse-proxy
+    driver: bridge
+    enable_ipv6: true
+    state: present
+    validate_certs: false
+
 - name: Set fact for container state
   ansible.builtin.set_fact:
     portainer_is_running: "{{ portainer_docker.container.State.Running }}"
