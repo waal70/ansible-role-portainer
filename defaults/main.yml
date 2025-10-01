@@ -22,7 +22,7 @@ stack_list:
 version: 2.34.0
 
 # Misc settings
-company_logo_url: url_to_company_logo
+company_logo_url: http://10.0.0.4/admin/img/logo.svg
 # templates_url: https://raw.githubusercontent.com/portainer/templates/master/templates.json
 templates_url: https://raw.githubusercontent.com/pi-hosted/pi-hosted/master/template/portainer-v2-arm64.json
 # following settings as string because of Jinja2 parsing issues with booleans

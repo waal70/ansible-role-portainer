@@ -12,27 +12,9 @@
     post_create_handler: "{{ item.post_handler | default('') }}"
 
   with_items:
-    "{{ stack_list }}"
-    # Add your stacks here
-    # - name: cloudflare
-    #   file: cloudflare.yml
-
-    # - name: wireguard
-    #   file: wireguard.yml
-
-    # - name: guacamole
-    #   file: guacamole.yml
-    #   post_handler: "../handlers/guac_handler.yml"
-
-    # - name: nginx
-    #   file: nginx.yml
-    #   dirs:
-    #     - config
-    #     - cache
-    #     - mariadb
-
-    # - name: homepage
-    #   file: homepage.yml
+    - "{{ stack_list }}"
+    - name: homepage
+      file: homepage.yml
 
 - name: Create portainer stacks for the secondary instance
   ansible.builtin.include_tasks: create_stack.yml
