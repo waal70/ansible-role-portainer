@@ -49,26 +49,26 @@
   vars:
     response_data: "{{ get_stack_response.json }}"
 
-- name: "Setup folder for appdata for {{ stack_name }}"
-  ansible.builtin.file:
-    path: "/home/{{ interactive_user }}/appdata/{{ stack_name }}"
-    state: directory
-    owner: "{{ interactive_user }}"
-    group: "{{ interactive_user }}"
-    mode: '0755'
-  when: auth_token is defined and stack_not_exists
+# - name: "Setup folder for appdata for {{ stack_name }}"
+#   ansible.builtin.file:
+#     path: "/appdata/{{ stack_name }}"
+#     state: directory
+#     owner: "{{ interactive_user }}"
+#     group: "{{ interactive_user }}"
+#     mode: '0755'
+#   when: auth_token is defined and stack_not_exists
 
-- name: "Setup sub folders for {{ stack_name }}"
-  ansible.builtin.file:
-    path: "/home/{{ interactive_user }}/appdata/{{ stack_name }}/{{ sub_directory }}"
-    state: directory
-    owner: "{{ interactive_user }}"
-    group: "{{ interactive_user }}"
-    mode: '0755'
-  loop: "{{ directories }}"
-  loop_control:
-    loop_var: sub_directory
-  when: directories is defined and directories | length > 0 and stack_not_exists
+# - name: "Setup sub folders for {{ stack_name }}"
+#   ansible.builtin.file:
+#     path: "/appdata/{{ stack_name }}/{{ sub_directory }}"
+#     state: directory
+#     owner: "{{ interactive_user }}"
+#     group: "{{ interactive_user }}"
+#     mode: '0755'
+#   loop: "{{ directories }}"
+#   loop_control:
+#     loop_var: sub_directory
+#   when: directories is defined and directories | length > 0 and stack_not_exists
 
 - name: "Create a stack in Portainer by the name of {{ stack_name }}"
   ansible.builtin.uri:
