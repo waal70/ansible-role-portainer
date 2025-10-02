@@ -13,8 +13,6 @@
 
   with_items:
     - "{{ stack_list }}"
-    - name: homepage
-      file: homepage.yml
 
 - name: Create portainer stacks for the secondary instance
   ansible.builtin.include_tasks: create_stack.yml
