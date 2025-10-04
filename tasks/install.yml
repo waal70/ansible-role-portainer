@@ -1,4 +1,8 @@
 ---
+- name: "First task to fool vscode"
+  ansible.builtin.debug:
+    msg: "Bogus"
+
 - name: Deploy Portainer to {{ inventory_hostname }} # noqa: args[module]
   community.docker.docker_container:
     name: "{{ container_name }}"
@@ -16,9 +20,15 @@
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - "{{ persistent_data_path }}"
-  register: portainer_docker
+  register: portainer_docker_deploy
+  when: container_recreate or not portainer_docker.container.State.Running
 
-- name: Ensure presence of cifs-utils for volume mappings
+- name: "Swap over variable when deploy has taken place"
+  ansible.builtin.set_fact:
+    portainer_docker: "{{ portainer_docker_deploy }}"
+  when: portainer_docker_deploy.skipped is not defined
+
+- name: "Ensure presence of cifs-utils for volume mappings"
   ansible.builtin.package:
     name: cifs-utils
     state: present
@@ -33,15 +43,11 @@
 
 - name: Set fact for container state
   ansible.builtin.set_fact:
-    portainer_is_running: "{{ portainer_docker.container.State.Running }}"
+    portainer_is_running: portainer_docker.container.State.Running
 
 - name: Set fact for network address
   ansible.builtin.set_fact:
     portainer_endpoint: https://{{ portainer_docker.container.NetworkSettings.IPAddress }}:{{ host_port }}/api
-
-- name: Print info to the user
-  ansible.builtin.debug:
-    msg: "{{ portainer_is_running }} // {{ portainer_endpoint }}"
 
 - name: Check container status
   ansible.builtin.fail:
