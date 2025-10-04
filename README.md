@@ -3,23 +3,28 @@
 =======================
 Portainer - the coolest UI for Docker http://portainer.io/
 
-This role installs Portainer using Docker container
+This role installs Portainer using Docker container. Adopted by waal70 to 
+perform the following behavior:
+
+- Will (re-)install portainer on the host, if needed
+- If role_included with ```stack_list``` specified, deploys the containers from stack_list
+- If the container from ```stack_list``` already exists, will update the stack definition (e.g. for setting new environment variables) if ```stack_update``` is true (defaults to false)
 
 ## Tasks in Role
 
-- Ensure docker-py is present using pip
-- Remove existing container [if ```remove_existing_container: true```]
-- Remove persistent data [if ```remove_persistent_data: true```]
+- Ensure docker-py is present
+- Remove existing (Portainer) container [if ```remove_existing_container: true```]
+- Remove persistent (Portainer) data [if ```remove_persistent_data: true```]
 - Deploy Portainer container to host [define persistent_data_path]
 - Configure Admin user password
 - Generate authentication token
 - Define endpoints [DICT | list]
 - Configure Portainer settings [Jinja2 template]
 - Configure registry [Jinja2 template]
+- 
 
 ## Requirements
 
-- `curl`
 - `docker` (Service + python package)
 
 ## Role Vars

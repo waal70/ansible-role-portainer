@@ -9,7 +9,7 @@
   ansible.builtin.include_tasks: admin.yml
   when: admin_user is defined
 
-- name: Generate authentication token
+- name: "Login with username/password to generate authentication token, user: {{ admin_user }}"
   ansible.builtin.uri:
     url: "{{ portainer_endpoint }}/auth"
     method: POST
@@ -19,6 +19,16 @@
     validate_certs: false
   register: auth_token
   when: admin_user and admin_password is defined
+
+- name: "Check authentication response for {{ admin_user }}"
+  ansible.builtin.fail:
+    msg: "Failed to authenticate with Portainer API for user {{ admin_user }}"
+  when: "auth_token.status != 200"
+
+- name: "Get JWT token from authentication response"
+  ansible.builtin.set_fact:
+    jwt_token: "{{ auth_token.json.jwt }}"
+  when: auth_token.status == 200
 
 - name: Include tasks to add Portainer Agents for main node only
   ansible.builtin.include_tasks: endpoints.yml

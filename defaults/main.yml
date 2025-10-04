@@ -14,6 +14,7 @@ container_recreate: false
 auth_method: 1
 
 stack_list: {}
+do_stack_update: false
 
 # Portainer version
 # Note that 'latest' will get you 2.19.x - the tag seems to be behind

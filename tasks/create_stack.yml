@@ -1,32 +1,4 @@
 ---
-- name: "Authenticate with Portainer API for {{ stack_name }}"
-  ansible.builtin.uri:
-    url: "{{ portainer_endpoint }}/auth"
-    method: POST
-    headers:
-      Content-Type: "application/json"
-    body_format: json
-    body:
-      username: "{{ admin_user }}"
-      password: "{{ admin_password }}"
-    validate_certs: false
-  register: auth_response
-  changed_when: false
-  ignore_errors: true
-
-
-- name: "Check authentication response for {{ stack_name }}"
-  ansible.builtin.fail:
-    msg: "Failed to authenticate with Portainer API"
-  when: "auth_response.status != 200"
-
-
-- name: "Get JWT token from authentication response for {{ stack_name }}"
-  ansible.builtin.set_fact:
-    jwt_token: "{{ auth_response.json.jwt }}"
-  when: auth_response.status == 200
-
-
 - name: "Get stack information from Portainer for {{ stack_name }}"
   ansible.builtin.uri:
     url: "{{ portainer_endpoint }}/stacks"
@@ -35,40 +7,22 @@
       Authorization: "Bearer {{ jwt_token }}"
     validate_certs: false
   register: get_stack_response
-  when: auth_token is defined
+  when: jwt_token is defined
 
-
-- name: "Debug get_stack_response {{ stack_name }} "
+- name: "Debug get_stack_response"
   ansible.builtin.debug:
-    var: get_stack_response
+    msg: "{{ get_stack_response.json }}"
 
-
-- name: "Check if the stack exists - {{ stack_name }} "
+- name: "Check if the stack already exists - {{ stack_name }}"
   ansible.builtin.set_fact:
     stack_not_exists: "{{ response_data | json_query('[?Name == `' + stack_name + '`]') | length <= 0 }}"
+    existing_stack_id: "{{ response_data | json_query('[?Name == `' + stack_name + '`].Id') | default('[0]') }}"
   vars:
     response_data: "{{ get_stack_response.json }}"
 
-# - name: "Setup folder for appdata for {{ stack_name }}"
-#   ansible.builtin.file:
-#     path: "/appdata/{{ stack_name }}"
-#     state: directory
-#     owner: "{{ interactive_user }}"
-#     group: "{{ interactive_user }}"
-#     mode: '0755'
-#   when: auth_token is defined and stack_not_exists
-
-# - name: "Setup sub folders for {{ stack_name }}"
-#   ansible.builtin.file:
-#     path: "/appdata/{{ stack_name }}/{{ sub_directory }}"
-#     state: directory
-#     owner: "{{ interactive_user }}"
-#     group: "{{ interactive_user }}"
-#     mode: '0755'
-#   loop: "{{ directories }}"
-#   loop_control:
-#     loop_var: sub_directory
-#   when: directories is defined and directories | length > 0 and stack_not_exists
+- name: Debug existing stack id
+  ansible.builtin.debug:
+    msg: "existing id = {{ existing_stack_id | first }}"
 
 - name: "Create a stack in Portainer by the name of {{ stack_name }}"
   ansible.builtin.uri:
@@ -85,7 +39,23 @@
     validate_certs: false
     timeout: 300 # Some stack creation can be quite time-consuming
   register: create_stack_response
-  when: jwt_token is defined and stack_not_exists
+  when: jwt_token is defined and (stack_not_exists | bool)
+
+- name: "Update a stack in Portainer by the name of {{ stack_name }}"
+  ansible.builtin.uri:
+    url: "{{ portainer_endpoint }}/stacks/{{ existing_stack_id | first }}?endpointId={{ endpoint_id }}"
+    method: PUT
+    headers:
+      Content-Type: "application/json"
+      Authorization: "Bearer {{ jwt_token }}"
+    body_format: json
+    body:
+      prune: false
+      pullImage: false
+      stackFileContent: "{{ stack_compose }}"
+    validate_certs: false
+    timeout: 300 # Some stack creation can be quite time-consuming
+  when: (jwt_token is defined) and ( existing_stack_id != '0') and not ( stack_not_exists | bool ) and ( stack_update | bool)
 
 - name: "Check stack creation response for {{ stack_name }}"
   ansible.builtin.fail:
