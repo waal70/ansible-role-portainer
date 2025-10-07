@@ -1,8 +1,4 @@
 ---
-- name: "First task to fool vscode"
-  ansible.builtin.debug:
-    msg: "Bogus"
-
 - name: Deploy Portainer to {{ inventory_hostname }} # noqa: args[module]
   community.docker.docker_container:
     name: "{{ container_name }}"

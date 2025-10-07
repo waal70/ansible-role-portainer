@@ -9,10 +9,6 @@
   register: get_stack_response
   when: jwt_token is defined
 
-- name: "Debug get_stack_response"
-  ansible.builtin.debug:
-    msg: "{{ get_stack_response.json }}"
-
 - name: "Check if the stack already exists - {{ stack_name }}"
   ansible.builtin.set_fact:
     stack_not_exists: "{{ response_data | json_query('[?Name == `' + stack_name + '`]') | length <= 0 }}"

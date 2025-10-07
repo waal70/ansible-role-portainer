@@ -20,7 +20,3 @@
         command: /bin/bash -c "/opt/guacamole/bin/initdb.sh --postgresql > /docker-entrypoint-initdb.d/initdb.sql"
         user: root
       register: result
-
-    - name: Print stdout
-      ansible.builtin.debug:
-        var: result.stdout
