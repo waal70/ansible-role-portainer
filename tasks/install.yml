@@ -1,4 +1,11 @@
 ---
+- name: Ensure persistent_data_path is there
+  ansible.builtin.file:
+    path: "{{ persistent_data_path }}"
+    state: directory
+    mode: "0644"
+  when: container_recreate or not was_already_running
+
 - name: Deploy Portainer to {{ inventory_hostname }} # noqa: args[module]
   community.docker.docker_container:
     name: "{{ container_name }}"
@@ -17,7 +24,7 @@
       - /var/run/docker.sock:/var/run/docker.sock
       - "{{ persistent_data_path }}"
   register: portainer_docker_deploy
-  when: container_recreate or not portainer_docker.container.State.Running
+  when: container_recreate or not was_already_running
 
 - name: "Swap over variable when deploy has taken place"
   ansible.builtin.set_fact:
@@ -39,7 +46,7 @@
 
 - name: Set fact for container state
   ansible.builtin.set_fact:
-    portainer_is_running: portainer_docker.container.State.Running
+    portainer_is_running: "{{ portainer_docker.container.State.Running }}"
 
 - name: Set fact for network address
   ansible.builtin.set_fact:

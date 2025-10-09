@@ -18,7 +18,7 @@
 
 - name: Debug existing stack id
   ansible.builtin.debug:
-    msg: "existing id = {{ existing_stack_id | first }}"
+    msg: "Existing id for stack {{ stack_name }} = {{ existing_stack_id | first | default('Stack not found') }}"
 
 - name: "Create a stack in Portainer by the name of {{ stack_name }}"
   ansible.builtin.uri:

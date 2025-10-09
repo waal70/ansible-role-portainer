@@ -4,7 +4,7 @@ configure_settings: true
 configure_registry: false
 remove_persistent_data: false
 remove_existing_container: false
-persistent_data_path: /opt/portainer:/data
+persistent_data_path: /opt/portainer
 container_image: portainer/portainer-ce:{{ version }}
 container_name: portainer
 container_labels: {}

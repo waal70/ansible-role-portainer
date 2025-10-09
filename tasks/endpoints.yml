@@ -32,7 +32,7 @@
     - "{{ endpoints | first }}"
   when: item.name not in portainer_known_endpoints or not was_already_running
 
-- name: "Register endpoint with Portainer in case of remote endpoint {{ stack_name }}"
+- name: "Register endpoint with Portainer in case of remote endpoint"
   ansible.builtin.uri:
     url: "{{ portainer_endpoint }}/endpoints"
     method: POST

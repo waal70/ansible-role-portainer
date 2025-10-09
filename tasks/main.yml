@@ -18,13 +18,19 @@
 
 - name: "Set program switch"
   ansible.builtin.set_fact:
-    was_already_running: portainer_docker.container.State.Running | default(false)
+    was_already_running: "{{ portainer_docker.container.State.Running | default(false) }}"
 
 - name: Include clean-up tasks
   ansible.builtin.include_tasks: clean-up.yml
 
 - name: Include installation tasks
   ansible.builtin.include_tasks: install.yml
+
+- name: Debug switch values
+  ansible.builtin.debug:
+    msg:
+      - "{{ admin_user }}"
+      - "{{ was_already_running }}"
 
 - name: Include setting admin password tasks
   ansible.builtin.include_tasks: admin.yml
