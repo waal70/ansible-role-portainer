@@ -50,7 +50,7 @@
 
 - name: Set fact for network address
   ansible.builtin.set_fact:
-    portainer_endpoint: https://{{ portainer_docker.container.NetworkSettings.IPAddress }}:{{ host_port }}/api
+    portainer_endpoint: https://{{ portainer_docker.container.NetworkSettings.Networks | dict2items | map(attribute='value.IPAddress') | list | first }}:{{ host_port }}/api # noqa: yaml[line-length]
 
 - name: Check container status
   ansible.builtin.fail:
@@ -59,7 +59,7 @@
 
 - name: Wait for Portainer web interface to get available
   ansible.builtin.uri:
-    url: https://{{ portainer_docker.container.NetworkSettings.IPAddress }}:{{ host_port }}
+    url: "{{ portainer_endpoint }}/status"
     method: GET
     validate_certs: false
   register: wait_portainer_result
