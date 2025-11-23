@@ -69,3 +69,14 @@
 - name: Include optional settings tasks
   ansible.builtin.include_tasks: settings.yml
   when: configure_settings and not was_already_running
+
+# Andre fix November 2025: Ensure API versions are set:
+
+- name: Check whether Docker API fix is already applied
+  ansible.builtin.stat:
+    path: /etc/systemd/system/docker.service.d/override.conf
+  register: docker_api_fix_stat
+
+- name: Include tasks to fix Docker API version compatibility
+  ansible.builtin.include_tasks: fix_api_version.yml
+  when: not docker_api_fix_stat.stat.exists
