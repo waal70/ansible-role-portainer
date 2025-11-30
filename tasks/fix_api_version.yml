@@ -1,26 +1,28 @@
 ---
-- name: Set DOCKER_MIN_API_VERSION environment variable for Docker service for non Pi
-  ansible.builtin.command: >
-    bash -c 'echo -e "[Service]\nEnvironment=DOCKER_MIN_API_VERSION=1.24" | sudo tee /etc/systemd/system/docker.service.d/override.conf'
-  args:
-    creates: /etc/systemd/system/docker.service.d/override.conf
-  register: docker_service_override
-  when: ansible_local.cpu_info.systemtype != "Raspberry"
-
-- name: Template out daemon.json if this is a Raspberry Pi
-  ansible.builtin.template:
-    src: daemon.json.j2
-    dest: /etc/docker/daemon.json
-    mode: '0644'
-  register: daemon_json
-  when: ansible_local.cpu_info.systemtype == "Raspberry"
+- name: Block to set DOCKER_MIN_API_VERSION
+  block:
+    - name: Set DOCKER_MIN_API_VERSION environment variable for Docker service for non Pi
+      ansible.builtin.command: >
+        bash -c 'echo -e "[Service]\nEnvironment=DOCKER_MIN_API_VERSION=1.24" | sudo tee /etc/systemd/system/docker.service.d/override.conf'
+      args:
+        creates: /etc/systemd/system/docker.service.d/override.conf
+      register: docker_service_override
+  rescue:
+    - name: Template out daemon.json if setting the override.conf fails
+      ansible.builtin.template:
+        src: daemon.json.j2
+        dest: /etc/docker/daemon.json
+        mode: '0644'
+      register: daemon_json
+# END Block
 
 - name: Reload systemd daemon
   ansible.builtin.systemd_service:
     daemon_reload: true
+  register: daemon_reload_result
 
 - name: Restart Docker service
   ansible.builtin.systemd_service:
     name: docker
     state: restarted
-  when: docker_service_override.changed or daemon_json.changed
+  when: daemon_reload_result.changed
