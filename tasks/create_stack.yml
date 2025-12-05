@@ -29,6 +29,7 @@
       Authorization: "Bearer {{ jwt_token }}"
     body_format: json
     body:
+      env: "{{ stack_env | default({}) }}"
       name: "{{ stack_name }}"
       fromAppTemplate: false
       stackFileContent: "{{ stack_compose }}"
