@@ -8,7 +8,7 @@
     stack_name: "{{ item.name }}"
     stack_compose: "{{ lookup('file', item.file) }}"
     stack_update: "{{ item.stack_update | default(do_stack_update) }}"
-    stack_env: "{{ item.env | default({}) }}"
+    stack_env: "{{ item.env | default(default_env) }}"
     directories: "{{ item.dirs }}"
     post_create_handler: "{{ item.post_handler | default('') }}"
   with_items:

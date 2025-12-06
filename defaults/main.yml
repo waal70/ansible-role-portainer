@@ -14,7 +14,13 @@ container_recreate: false
 auth_method: 1
 
 stack_list: {}
-do_stack_update: false
+default_env: [
+      {
+            "name": "ANSIBLEMARKER",
+            "value": "NOENVIRONMENTSPECIFIEDFORTHISSTACK"
+      }
+]
+do_stack_update: true
 
 # Portainer version
 # Note that 'latest' will get you 2.19.x - the tag seems to be behind
