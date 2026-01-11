@@ -11,30 +11,30 @@
         - "{{ lookup('env', 'PRIVATE_REPO') | default('~') }}/ansible-vault/{{ ansible_role_name }}-vars.yml"
       skip: true
 
-- name: "Get current status of {{ container_name }}"
-  community.docker.docker_container_info:
-    name: "{{ container_name }}"
-  register: portainer_docker
-
-- name: "Set program switch"
-  ansible.builtin.set_fact:
-    was_already_running: "{{ portainer_docker.container.State.Running | default(false) }}"
+# Call this role as follows:
+# - name: "Include role to deploy homepage-stack to Portainer"
+#  ansible.builtin.include_role:
+#    name: waal70.portainer
+#  vars:
+#    stack_list:
+#      - name: homepage
+#        file: homepage.yml
+#        endpointid: 2 # optional, defaults to 1
+#        stack_update: true # optional, defaults to do_stack_update variable
+#        env: {} # optional, defaults to default_env variable
+#        dirs: [] # optional, list of directories to create before deploying stack
+#        post_handler: '' # optional, path to task file to run after stack creation
 
 - name: Include clean-up tasks
   ansible.builtin.include_tasks: clean-up.yml
 
-- name: Include installation tasks
+- name: Include installation tasks for main Portainer
   ansible.builtin.include_tasks: install.yml
+  when: ('homeserver' in group_names)
 
-- name: Debug switch values
-  ansible.builtin.debug:
-    msg:
-      - "{{ admin_user }}"
-      - "{{ was_already_running }}"
-
-- name: Include setting admin password tasks
-  ansible.builtin.include_tasks: admin.yml
-  when: admin_user is defined and not was_already_running
+- name: "Include installation tasks for Portainer Agent on outpost servers"
+  ansible.builtin.include_tasks: install-agent.yml
+  when: ('outpost' in group_names)
 
 - name: "Login with username/password to generate authentication token, user: {{ admin_user }}"
   ansible.builtin.uri:
@@ -57,18 +57,34 @@
     jwt_token: "{{ auth_token.json.jwt }}"
   when: auth_token.status == 200
 
-- name: Include tasks to add Portainer Agents for main node only
+- name: Get accessible endpoints
+  ansible.builtin.uri:
+    url: "{{ portainer_endpoint }}/endpoints"
+    method: GET
+    return_content: true
+    validate_certs: false
+    headers:
+      Authorization: Bearer {{ (auth_token.content | from_json).jwt }}
+  register: portainer_known_endpoints_raw
+
+- name: Save endpoints as fact
+  ansible.builtin.set_fact:
+    portainer_known_endpoints: "{{ portainer_known_endpoints_raw.json | map(attribute='Name') | list }}"
+    portainer_known_endpoint_ids: "{{ portainer_known_endpoints_raw.json | map(attribute='Id') | list }}"
+    portainer_remote_endpoint_type: "{{ portainer_known_endpoints_raw.json }}"
+
+- name: "Include tasks to determine the list of existing endpoints, only needed when this is the homeserver"
+  ansible.builtin.include_tasks: get_endpoints.yml
+  when: ('homeserver' in group_names)
+
+- name: Include tasks to add Portainer Agents for main node (=homeserver) only
   ansible.builtin.include_tasks: endpoints.yml
-  when: (endpoints is not none) and ('jumpservers' not in group_names)
+  when: (endpoints is not none) and ('homeserver' in group_names)
 
 # Is this the place to add the default jumpserver stacks?
 - name: Incude tasks to add stacks to Portainer
   ansible.builtin.include_tasks: stacklooper.yml
-  when: ('jumpservers' not in group_names) and (stack_list is defined and stack_list | length > 0)
-
-- name: Include optional settings tasks
-  ansible.builtin.include_tasks: settings.yml
-  when: configure_settings and not was_already_running
+  when: (stack_list is defined and stack_list | length > 0)
 
 # Andre fix November 2025: Ensure API versions are set:
 # Andre December 2025: Removed as now in docker daemon options

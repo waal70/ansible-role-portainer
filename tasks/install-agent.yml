@@ -1,0 +1,22 @@
+---
+- name: Deploy Portainer Agent when this is a designated outpost server
+  community.docker.docker_container:
+    name: "portainer_agent"
+    image: "portainer/agent:{{ portainer_agent_version }}"
+    state: started
+    detach: true
+    restart_policy: always
+    published_ports: "9001:9001"
+    image_name_mismatch: "recreate"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/volumes:/var/lib/docker/volumes
+
+# The agent is managed by the main Portainer instance, so find out the url to connect to item
+- name: Get IP address of main Portainer server from agent container
+  ansible.builtin.set_fact:
+    portainer_ip: "{{ hostvars[groups['homeserver'][0]]['ansible_default_ipv4']['address'] }}"
+
+- name: Set fact for network address
+  ansible.builtin.set_fact:
+    portainer_endpoint: https://{{ portainer_ip }}:{{ host_port }}/api

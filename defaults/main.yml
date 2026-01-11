@@ -26,6 +26,11 @@ do_stack_update: true
 # Note that 'latest' will get you 2.19.x - the tag seems to be behind
 version: 2.34.0
 
+# Portainer Agent version
+# Specific versions are preferred. You can also put "latest" here
+# Andre October 2024: bump version to 2.21.3 from 2.20.3
+portainer_agent_version: "{{ version }}"
+
 # Misc settings
 company_logo_url: http://10.0.0.4/admin/img/logo.svg
 # templates_url: https://raw.githubusercontent.com/portainer/templates/master/templates.json
@@ -43,7 +48,5 @@ container_ports:
 admin_user: admin
 # admin_password: password admin password delegated to portainer-vars.yml in vault
 
-# Endpoints (of Portainer Agents)
-endpoints:
-      - { name: "{{ inventory_hostname }}", url: "", id: "1" }
- # - { name: "ams-dmz-jump", url: "tcp://172.16.10.92:9001", id: "2" }
+# Endpoints (of Portainer Agents) - will be set in the playbook based on group membership
+endpoints: []

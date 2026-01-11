@@ -4,7 +4,7 @@
     portainer_api: "{{ portainer_endpoint }}"
     portainer_admin_user: "{{ admin_user }}"
     portainer_admin_password: "{{ admin_password }}"
-    endpoint_id: "{{ portainer_known_endpoint_ids | first }}"
+    endpoint_id: "{{ item.endpointid | default(portainer_known_endpoint_ids | first) }}"
     stack_name: "{{ item.name }}"
     stack_compose: "{{ lookup('file', item.file) }}"
     stack_update: "{{ item.stack_update | default(do_stack_update) }}"
@@ -13,28 +13,3 @@
     post_create_handler: "{{ item.post_handler | default('') }}"
   with_items:
     - "{{ stack_list }}"
-
-- name: Create portainer stacks for the secondary instance
-  ansible.builtin.include_tasks: create_stack.yml
-  vars:
-    portainer_api: "{{ portainer_endpoint }}"
-    portainer_admin_user: "{{ admin_user }}"
-    portainer_admin_password: "{{ admin_password }}"
-    endpoint_id: "{{ portainer_known_endpoint_ids[1] }}"
-    stack_name: "{{ item.name }}"
-    stack_compose: "{{ lookup('file', item.file) }}"
-    directories: "{{ item.dirs }}"
-    post_create_handler: "{{ item.post_handler | default('') }}"
-
-  with_items:
-
-    # - name: cloudflare
-    #   file: cloudflare.yml
-
-    # - name: wireguard
-    #   file: wireguard.yml
-
-    - name: homepage
-      file: homepage.yml
-  when:
-    portainer_known_endpoints | length != 1

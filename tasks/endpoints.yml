@@ -1,38 +1,5 @@
 ---
-- name: Get Endpoints
-  ansible.builtin.uri:
-    url: "{{ portainer_endpoint }}/endpoints"
-    method: GET
-    return_content: true
-    validate_certs: false
-    headers:
-      Authorization: Bearer {{ (auth_token.content | from_json).jwt }}
-  register: portainer_known_endpoints_raw
-
-- name: Save endpoints as fact
-  ansible.builtin.set_fact:
-    portainer_known_endpoints: "{{ portainer_known_endpoints_raw.json | map(attribute='Name') | list }}"
-    portainer_known_endpoint_ids: "{{ portainer_known_endpoints_raw.json | map(attribute='Id') | list }}"
-    portainer_remote_endpoint_type: "{{ portainer_known_endpoints_raw.json }}"
-
-- name: "Register first endpoint with Portainer"
-  ansible.builtin.uri:
-    url: "{{ portainer_endpoint }}/endpoints"
-    method: POST
-    headers:
-      Authorization: "Bearer {{ (auth_token.content | from_json).jwt }}"
-    body_format: form-multipart
-    validate_certs: false
-    body:
-      Name: "{{ item.name }}"
-      PublicURL: "{{ inventory_hostname }}"
-      EndpointCreationType: "1"
-  register: response
-  with_items:
-    - "{{ endpoints | first }}"
-  when: item.name not in portainer_known_endpoints or not was_already_running
-
-- name: "Register endpoint with Portainer in case of remote endpoint"
+- name: "Register main endpoint with Portainer"
   ansible.builtin.uri:
     url: "{{ portainer_endpoint }}/endpoints"
     method: POST
@@ -43,17 +10,15 @@
     body:
       Name: "{{ item.name }}"
       URL: "{{ item.url }}"
-      EndpointCreationType: "2"
-      TLS: "true"
-      TLSSkipClientVerify: "true"
-      TLSSkipVerify: "true"
+      PublicURL: "{% if item.id == 1 %}{{ ansible_default_ipv4.address }}{% else %}{{ item.publicurl }}{% endif %}"
+      EndpointCreationType: "{% if item.id == 1 %}1{% else %}2{% endif %}"
+      TLS: "{% if item.id == 1 %}false{% else %}true{% endif %}"
+      TLSSkipVerify: "{% if item.id == 1 %}false{% else %}true{% endif %}"
+      TLSSkipClientVerify: "{% if item.id == 1 %}false{% else %}true{% endif %}"
   register: response
   with_items:
-    - "{{ endpoints | last }}"
-  when:
-    - item.name not in portainer_known_endpoints
-    - endpoints | length > 1
-    - not was_already_running
+    - "{{ endpoints }}"
+  when: item.name not in portainer_known_endpoints
 
 - name: Refresh Endpoints
   ansible.builtin.uri:
@@ -64,14 +29,12 @@
     headers:
       Authorization: Bearer {{ (auth_token.content | from_json).jwt }}
   register: portainer_known_endpoints_raw
-  when: not was_already_running
 
 - name: Refresh endpoints to facts
   ansible.builtin.set_fact:
     portainer_known_endpoints: "{{ portainer_known_endpoints_raw.json | map(attribute='Name') | list }}"
     portainer_known_endpoint_ids: "{{ portainer_known_endpoints_raw.json | map(attribute='Id') | list }}"
     portainer_remote_endpoint_type: "{{ portainer_known_endpoints_raw.json }}"
-  when: not was_already_running
 
 - name: Verifying calls
   ansible.builtin.fail:

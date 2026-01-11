@@ -1,4 +1,13 @@
 ---
+- name: "Get current status of {{ container_name }}"
+  community.docker.docker_container_info:
+    name: "{{ container_name }}"
+  register: portainer_docker
+
+- name: "Set program switch"
+  ansible.builtin.set_fact:
+    was_already_running: "{{ portainer_docker.container.State.Running | default(false) }}"
+
 - name: Ensure persistent_data_path is there
   ansible.builtin.file:
     path: "{{ persistent_data_path }}"
@@ -67,3 +76,11 @@
   retries: 10
   delay: 3
   changed_when: false
+
+- name: Include setting admin password tasks
+  ansible.builtin.include_tasks: admin.yml
+  when: admin_user is defined and not was_already_running
+
+- name: Include optional settings tasks
+  ansible.builtin.include_tasks: settings.yml
+  when: configure_settings and not was_already_running
