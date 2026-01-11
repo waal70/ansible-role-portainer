@@ -35,7 +35,7 @@
   register: portainer_docker_deploy
   when: container_recreate or not was_already_running
 
-- name: "Swap over variable when deploy has taken place"
+- name: "Refresh variable when deploy has taken place"
   ansible.builtin.set_fact:
     portainer_docker: "{{ portainer_docker_deploy }}"
   when: portainer_docker_deploy.skipped is not defined
@@ -66,7 +66,7 @@
     msg: "Portainer did not start: {{ portainer_is_running }}"
   when: not portainer_is_running
 
-- name: Wait for Portainer web interface to get available
+- name: Verify that Portainer web interface is available
   ansible.builtin.uri:
     url: "{{ portainer_endpoint }}/status"
     method: GET

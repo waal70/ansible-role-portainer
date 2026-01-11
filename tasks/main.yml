@@ -24,13 +24,19 @@
 #        env: {} # optional, defaults to default_env variable
 #        dirs: [] # optional, list of directories to create before deploying stack
 #        post_handler: '' # optional, path to task file to run after stack creation
+#
+# This role should be run on the homeserver only, as it assumes that the Portainer
+# instance is running there. It will however also install Portainer Agent on any
+# outpost servers defined in the inventory and manage stack installs on that satellite
 
 - name: Include clean-up tasks
   ansible.builtin.include_tasks: clean-up.yml
 
 - name: Include installation tasks for main Portainer
   ansible.builtin.include_tasks: install.yml
-  when: ('homeserver' in group_names)
+
+- name: "Determine presence of outpost hosts"
+  ansible.builtin.include_tasks: gather-outpost.yml
 
 - name: "Include installation tasks for Portainer Agent on outpost servers"
   ansible.builtin.include_tasks: install-agent.yml
@@ -57,7 +63,7 @@
     jwt_token: "{{ auth_token.json.jwt }}"
   when: auth_token.status == 200
 
-- name: Get accessible endpoints
+- name: Retrieve a list of already configured endpoints from Portainer
   ansible.builtin.uri:
     url: "{{ portainer_endpoint }}/endpoints"
     method: GET
@@ -75,11 +81,10 @@
 
 - name: "Include tasks to determine the list of existing endpoints, only needed when this is the homeserver"
   ansible.builtin.include_tasks: get_endpoints.yml
-  when: ('homeserver' in group_names)
 
 - name: Include tasks to add Portainer Agents for main node (=homeserver) only
   ansible.builtin.include_tasks: endpoints.yml
-  when: (endpoints is not none) and ('homeserver' in group_names)
+  when: (endpoints is not none)
 
 # Is this the place to add the default jumpserver stacks?
 - name: Incude tasks to add stacks to Portainer

@@ -8,7 +8,7 @@
 - name: "Set info for this server as an endpoint"
   ansible.builtin.set_fact:
     endpoints:
-      - { name: "{{ inventory_hostname }}", url: "unix:///var/run/docker.sock", publicurl: '{{ ansible_default_ipv4.address }}', id: "1" }
+      - { name: "{{ inventory_hostname }}", url: "", publicurl: '{{ ansible_default_ipv4.address }}', id: "{{ portainer_known_endpoint_ids[0] }}" }
 
 - name: Block to add outpost servers as endpoints
   when: groups['outpost'] is defined
@@ -21,7 +21,7 @@
           {%-   set _ = ep_list.append({'name': host,
                                         'url': 'tcp://' + hostvars[host]['ansible_default_ipv4']['address'] + ':9001',
                                         'publicurl': hostvars[host]['ansible_default_ipv4']['address'],
-                                        'id': loop.index + 1}) -%}
+                                        'id': loop.index + portainer_known_endpoint_ids[0] }) -%}
           {%- endfor -%}
           {{ ep_list }}
       loop: "{{ groups['outpost'] }}"
@@ -30,3 +30,7 @@
     - name: Add the agent_endpoints to the og_endpoints variable
       ansible.builtin.set_fact:
         endpoints: "{{ endpoints + agent_endpoints }}"
+
+- name: "Tell the user the list of endpoints"
+  ansible.builtin.debug:
+    var: endpoints

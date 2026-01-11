@@ -1,5 +1,5 @@
 ---
-- name: "Register main endpoint with Portainer"
+- name: "Register endpoints with Portainer"
   ansible.builtin.uri:
     url: "{{ portainer_endpoint }}/endpoints"
     method: POST
