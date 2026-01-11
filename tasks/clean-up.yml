@@ -5,7 +5,7 @@
     state: absent
     networks: []
     force_kill: true
-  when: remove_existing_container or 'outpost' in group_names
+  when: remove_existing_container
 
 - name: Remove persistent data
   ansible.builtin.file:

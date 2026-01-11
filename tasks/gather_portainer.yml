@@ -1,0 +1,25 @@
+---
+- name: "Gather facts for outpost servers"
+  ansible.builtin.setup:
+    gather_subset:
+      - '!all'
+      - network
+  delegate_to: "{{ item }}"
+  delegate_facts: true
+  loop: "{{ groups['outpost'] }}"
+  when: groups['outpost'] is defined
+
+- name: "Gather facts for main Portainer server"
+  ansible.builtin.setup:
+    gather_subset:
+      - '!all'
+      - network
+  delegate_to: "{{ item }}"
+  delegate_facts: true
+  loop: "{{ groups['homeserver'] }}"
+  when: groups['homeserver'] is defined
+
+- name: "Set fact for main Portainer instance, should this not have been set"
+  ansible.builtin.set_fact:
+    portainer_endpoint: "https://{{ hostvars[groups['homeserver'][0]].ansible_default_ipv4.address }}:{{ host_port }}/api"
+  when: portainer_endpoint is not defined

@@ -13,3 +13,22 @@
       - /var/lib/docker/volumes:/var/lib/docker/volumes
   delegate_to: "{{ item }}"
   loop: "{{ groups['outpost'] }}"
+
+- name: "Ensure the shared network 'reverse-proxy' exists on all outposts"
+  community.docker.docker_network:
+    name: reverse-proxy
+    driver: bridge
+    enable_ipv6: true
+    state: present
+    validate_certs: false
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['outpost'] }}"
+
+- name: Remove erroneous Portainer main container
+  community.docker.docker_container:
+    name: portainer
+    state: absent
+    networks: []
+    force_kill: true
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['outpost'] }}"

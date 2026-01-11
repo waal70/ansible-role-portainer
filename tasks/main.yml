@@ -31,16 +31,17 @@
 
 - name: Include clean-up tasks
   ansible.builtin.include_tasks: clean-up.yml
+  when: ('homeserver' in group_names)
 
 - name: Include installation tasks for main Portainer
   ansible.builtin.include_tasks: install.yml
+  when: ('homeserver' in group_names)
 
-- name: "Determine presence of outpost hosts"
-  ansible.builtin.include_tasks: gather-outpost.yml
+- name: "Determine presence of Portainer hosts"
+  ansible.builtin.include_tasks: gather_portainer.yml
 
 - name: "Include installation tasks for Portainer Agent on outpost servers"
   ansible.builtin.include_tasks: install-agent.yml
-  when: ('outpost' in group_names)
 
 - name: "Login with username/password to generate authentication token, user: {{ admin_user }}"
   ansible.builtin.uri:
