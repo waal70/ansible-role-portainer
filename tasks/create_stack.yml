@@ -1,7 +1,8 @@
 ---
-- name: "Get stack information from Portainer for {{ stack_name }}"
+# Fix Andre January 2026: Added the Endpoint ID to narrow the check to the requested endpoint only
+- name: "Get stack information from Portainer for '{{ stack_name }}' on endpoint: {{ endpoint_id }}" # noqa: name[template]
   ansible.builtin.uri:
-    url: "{{ portainer_endpoint }}/stacks"
+    url: "{{ portainer_endpoint }}/stacks?filters={\"EndpointId\":{{ endpoint_id }}}"
     method: GET
     headers:
       Authorization: "Bearer {{ jwt_token }}"
@@ -18,7 +19,7 @@
 
 - name: Debug existing stack id
   ansible.builtin.debug:
-    msg: "Existing id for stack {{ stack_name }} = {{ existing_stack_id | first | default('Stack not found') }}"
+    msg: "Existing id for '{{ stack_name }}' on Endpoint {{ endpoint_id }} = {{ existing_stack_id | first | default('Stack not found') }}"
 
 - name: "Create a stack in Portainer by the name of {{ stack_name }}"
   ansible.builtin.uri:
