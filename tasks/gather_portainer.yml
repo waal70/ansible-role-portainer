@@ -1,23 +1,23 @@
 ---
-- name: "Gather facts for outpost servers"
-  ansible.builtin.setup:
-    gather_subset:
-      - '!all'
-      - network
-  delegate_to: "{{ item }}"
-  delegate_facts: true
-  loop: "{{ groups['outpost'] }}"
-  when: groups['outpost'] is defined
-
-- name: "Gather facts for main Portainer server"
-  ansible.builtin.setup:
-    gather_subset:
-      - '!all'
-      - network
-  delegate_to: "{{ item }}"
-  delegate_facts: true
-  loop: "{{ groups['homeserver'] }}"
-  when: groups['homeserver'] is defined
+- name: "Block to gather facts for outposts and main server"
+  when: outpost_online
+  block:
+    - name: "Gather facts for outpost servers"
+      ansible.builtin.setup:
+        gather_subset:
+          - '!all'
+          - network
+      delegate_to: "{{ item }}"
+      delegate_facts: true
+      loop: "{{ groups['outpost'] }}"
+    - name: "Gather facts for main Portainer server"
+      ansible.builtin.setup:
+        gather_subset:
+          - '!all'
+          - network
+      delegate_to: "{{ item }}"
+      delegate_facts: true
+      loop: "{{ groups['homeserver'] }}"
 
 - name: "Set fact for main Portainer instance, should this not have been set"
   ansible.builtin.set_fact:
