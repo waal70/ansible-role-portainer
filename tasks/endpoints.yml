@@ -34,7 +34,6 @@
   ansible.builtin.set_fact:
     portainer_known_endpoints: "{{ portainer_known_endpoints_raw.json | map(attribute='Name') | list }}"
     portainer_known_endpoint_ids: "{{ portainer_known_endpoints_raw.json | map(attribute='Id') | list }}"
-    portainer_remote_endpoint_type: "{{ portainer_known_endpoints_raw.json }}"
 
 - name: Verifying calls
   ansible.builtin.fail:

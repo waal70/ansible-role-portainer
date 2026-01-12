@@ -8,28 +8,22 @@
 - name: "Set info for this server as an endpoint"
   ansible.builtin.set_fact:
     endpoints:
-      - { name: "{{ inventory_hostname }}", url: "", publicurl: '{{ ansible_default_ipv4.address }}', id: "{{ portainer_known_endpoint_ids[0] }}" }
+      - { name: "{{ inventory_hostname }}", url: "", publicurl: "{{ ansible_default_ipv4.address }}" }
+
+- name: "Fail if the main endpoint is not present and inform the user"
+  ansible.builtin.fail:
+    msg: "The main Portainer server (homeserver) must be configured as a local endpoint."
+  when: "inventory_hostname not in portainer_known_endpoints"
 
 - name: Block to add outpost servers as endpoints
   when: groups['outpost'] is defined
   block:
-    - name: Setup endpoints variable for outpost nodes
+    - name: Add each outpost server as an endpoint
       ansible.builtin.set_fact:
-        agent_endpoints: >
-          {%- set ep_list = [] -%}
-          {%- for host in groups['outpost'] -%}
-          {%-   set _ = ep_list.append({'name': host,
-                                        'url': 'tcp://' + hostvars[host]['ansible_default_ipv4']['address'] + ':9001',
-                                        'publicurl': hostvars[host]['ansible_default_ipv4']['address'],
-                                        'id': loop.index + portainer_known_endpoint_ids[0] }) -%}
-          {%- endfor -%}
-          {{ ep_list }}
+        endpoints: "{{ endpoints + [{'name': host, 'url': 'tcp://' + hostvars[host]['ansible_default_ipv4']['address'] + ':9001', 'publicurl': hostvars[host]['ansible_default_ipv4']['address']}] }}" # noqa: yaml[line-length]
       loop: "{{ groups['outpost'] }}"
       loop_control:
         loop_var: host
-    - name: Add the agent_endpoints to the og_endpoints variable
-      ansible.builtin.set_fact:
-        endpoints: "{{ endpoints + agent_endpoints }}"
 
 - name: "Tell the user the list of endpoints"
   ansible.builtin.debug:

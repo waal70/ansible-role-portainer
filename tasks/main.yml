@@ -78,7 +78,6 @@
   ansible.builtin.set_fact:
     portainer_known_endpoints: "{{ portainer_known_endpoints_raw.json | map(attribute='Name') | list }}"
     portainer_known_endpoint_ids: "{{ portainer_known_endpoints_raw.json | map(attribute='Id') | list }}"
-    portainer_remote_endpoint_type: "{{ portainer_known_endpoints_raw.json }}"
 
 - name: "Include tasks to determine the list of existing endpoints, only needed when this is the homeserver"
   ansible.builtin.include_tasks: get_endpoints.yml
@@ -87,10 +86,14 @@
   ansible.builtin.include_tasks: endpoints.yml
   when: (endpoints is not none)
 
-# Is this the place to add the default jumpserver stacks?
+- name: "Debug endpoint and hostname"
+  ansible.builtin.debug:
+    msg: "Requested deploy on {{ portainer_known_endpoints[endpoint_idx] }}, while running on host {{ inventory_hostname }}"
+
+# Only proceed to stack deployment if we have the correct server instance
 - name: Incude tasks to add stacks to Portainer
   ansible.builtin.include_tasks: stacklooper.yml
-  when: (stack_list is defined and stack_list | length > 0)
+  when: (stack_list is defined and stack_list | length > 0) and (portainer_known_endpoints[endpoint_idx] == inventory_hostname)
 
 # Andre fix November 2025: Ensure API versions are set:
 # Andre December 2025: Removed as now in docker daemon options

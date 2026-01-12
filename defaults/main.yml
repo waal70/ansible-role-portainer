@@ -13,6 +13,10 @@ container_restart_policy: always
 container_recreate: false
 auth_method: 1
 
+# Endpoint index is a zero-based index we use to deploy containers. It will be used to convert to
+# Portainer's endpoint ID. Default is zero, which is assumed to be the "local" endpoint, i.e. main Portainer.
+endpoint_idx: 0
+
 stack_list: {}
 default_env: [
       {
