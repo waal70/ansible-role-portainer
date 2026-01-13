@@ -12,3 +12,4 @@
     body_format: json
     body: "{{ lookup('template', 'settings.json.j2') }}"
     validate_certs: false
+  when: configure_settings and not was_already_running

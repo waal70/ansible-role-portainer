@@ -24,7 +24,3 @@
       loop: "{{ groups['outpost'] }}"
       loop_control:
         loop_var: host
-
-- name: "Tell the user the list of endpoints"
-  ansible.builtin.debug:
-    var: endpoints

@@ -41,3 +41,34 @@
   when: item.stdout is defined and (item.stdout|from_json).err is defined
   with_items:
     - "{{ response.results }}"
+
+- name: Create endpoint_group for the main server if they do not exist
+  ansible.builtin.uri:
+    url: "{{ portainer_endpoint }}/endpoint_groups"
+    method: POST
+    return_content: true
+    headers:
+      Authorization: "{{ (auth_token.content | from_json).jwt }}"
+    body_format: json
+    body:
+      associatedEndpoints: "{{ portainer_known_endpoint_ids[:1] }}"
+      name: "Main server"
+      description: "Main Portainer Instance"
+    status_code: [200, 409]
+    validate_certs: false
+
+- name: Create endpoint_group for outpost servers if they do not exist
+  ansible.builtin.uri:
+    url: "{{ portainer_endpoint }}/endpoint_groups"
+    method: POST
+    return_content: true
+    headers:
+      Authorization: "{{ (auth_token.content | from_json).jwt }}"
+    body_format: json
+    body:
+      associatedEndpoints: "{{ portainer_known_endpoint_ids[1:] }}"
+      name: "Outpost server"
+      description: "Outpost Servers"
+    status_code: [200, 409]
+    validate_certs: false
+  when: outpost_online
