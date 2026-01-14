@@ -87,6 +87,7 @@
 
 - name: "Include tasks to determine the list of existing endpoints, only needed when this is the homeserver"
   ansible.builtin.include_tasks: get_endpoints.yml
+  when: (portainer_known_endpoints | length) < (groups['outpost'] | length | default(0))
 
 - name: Include tasks to add Portainer Agents for main node (=homeserver) only
   ansible.builtin.include_tasks: endpoints.yml
