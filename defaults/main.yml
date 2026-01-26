@@ -4,8 +4,11 @@ configure_settings: true
 configure_registry: false
 remove_persistent_data: false
 remove_existing_container: false
-persistent_data_path: /opt/portainer
-container_image: portainer/portainer-ce:{{ version }}
+persistent_data_path: /appdata/portainer
+# is portainer/portainer-ce:{{ version }} for community edition
+container_image: portainer/portainer-ee:{{ version }}
+# may be omitted if you use community edition, however: 3 nodes are free
+portainer_license_key: "https://www.portainer.io/take-3"
 container_name: portainer
 container_labels: {}
 container_network:
@@ -28,7 +31,7 @@ do_stack_update: true
 
 # Portainer version
 # Note that 'latest' will get you 2.19.x - the tag seems to be behind
-version: 2.34.0
+version: 2.37.0
 
 # Portainer Agent version
 # Specific versions are preferred. You can also put "latest" here

@@ -5,22 +5,24 @@
 # This file builds the required variable to set the endpoints
 # Please not that the first endpoint is a local one. Adding it throught the API fails.
 
-- name: "Set info for this server as an endpoint"
+- name: "Set info for this server as an endpoint, should always be id 1"
   ansible.builtin.set_fact:
     endpoints:
-      - { name: "{{ inventory_hostname }}", url: "", publicurl: "{{ ansible_default_ipv4.address }}" }
+      - { name: "{{ inventory_hostname }}", id: 1, url: "", publicurl: "{{ ansible_default_ipv4.address }}" }
 
-- name: "Fail if the main endpoint is not present and inform the user"
-  ansible.builtin.fail:
-    msg: "The main Portainer server (homeserver) must be configured as a local endpoint."
-  when: "inventory_hostname not in portainer_known_endpoints"
+# - name: "Fail if the main endpoint is not present and inform the user"
+#   ansible.builtin.fail:
+#     msg: "The main Portainer server (homeserver) must be configured as a local endpoint."
+#   when: "inventory_hostname not in portainer_known_endpoints"
 
+# Note that adding the id will not determine the endpoint's actual id!
+# It is just there to preclude it being interpreted as the main (local) endpoint
 - name: Block to add outpost servers as endpoints
   when: groups['outpost'] is defined
   block:
     - name: Add each outpost server as an endpoint
       ansible.builtin.set_fact:
-        endpoints: "{{ endpoints + [{'name': host, 'url': 'tcp://' + hostvars[host]['ansible_default_ipv4']['address'] + ':9001', 'publicurl': hostvars[host]['ansible_default_ipv4']['address']}] }}" # noqa: yaml[line-length]
+        endpoints: "{{ endpoints + [{'name': host, 'id': 2, 'url': 'tcp://' + hostvars[host]['ansible_default_ipv4']['address'] + ':9001', 'publicurl': hostvars[host]['ansible_default_ipv4']['address']}] }}" # noqa: yaml[line-length]
       loop: "{{ groups['outpost'] }}"
       loop_control:
         loop_var: host

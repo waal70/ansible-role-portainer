@@ -28,6 +28,8 @@
     networks: "{{ container_network | default(omit, True) }}"
     networks_cli_compatible: false # avoid ansible 2.12. Deprecation warning
     image_name_mismatch: "recreate"
+    env:
+      PORTAINER_LICENSE_KEY: "{{ portainer_license_key }}"
     published_ports: "{{ container_ports | default(omit, True) }}"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -80,6 +82,17 @@
 - name: Include setting admin password tasks
   ansible.builtin.include_tasks: admin.yml
   when: admin_user is defined and not was_already_running
+
+- name: "After install, login with username/password to generate authentication token, user: {{ admin_user }}"
+  ansible.builtin.uri:
+    url: "{{ portainer_endpoint }}/auth"
+    method: POST
+    return_content: true
+    body_format: json
+    body: '{"Username": "{{ admin_user }}", "Password": "{{ admin_password }}"}'
+    validate_certs: false
+  register: auth_token
+  when: admin_user and admin_password is defined
 
 - name: Include optional settings tasks
   ansible.builtin.include_tasks: settings.yml
