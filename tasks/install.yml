@@ -33,7 +33,7 @@
     published_ports: "{{ container_ports | default(omit, True) }}"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - "{{ persistent_data_path }}"
+      - "{{ persistent_data_path }}:/data"
   register: portainer_docker_deploy
   when: container_recreate or not was_already_running
 
