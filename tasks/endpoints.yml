@@ -10,7 +10,7 @@
     body:
       Name: "{{ item.name }}"
       URL: "{{ item.url }}"
-      PublicURL: "{% if item.id == 1 %}{{ ansible_default_ipv4.address }}{% else %}{{ item.publicurl }}{% endif %}"
+      PublicURL: "{% if item.id == 1 %}{{ ansible_facts['default_ipv4'].address }}{% else %}{{ item.publicurl }}{% endif %}"
       ContainerEngine: "docker"
       EndpointCreationType: "{% if item.id == 1 %}1{% else %}2{% endif %}"
       TLS: "{% if item.id == 1 %}false{% else %}true{% endif %}"

@@ -1,5 +1,5 @@
 ---
 - name: "Set fact for main Portainer instance, should this not have been set"
   ansible.builtin.set_fact:
-    portainer_endpoint: "https://{{ hostvars[groups['homeserver'][0]].ansible_default_ipv4.address }}:{{ host_port }}/api"
+    portainer_endpoint: "https://{{ hostvars[groups['homeserver'][0]].ansible_facts['default_ipv4'].address }}:{{ host_port }}/api"
   when: portainer_endpoint is not defined
