@@ -47,13 +47,25 @@
     name: cifs-utils
     state: present
 
-- name: "Ensure the shared network 'reverse-proxy' exists to enable reverse proxying"
-  community.docker.docker_network:
-    name: reverse-proxy
-    driver: bridge
-    enable_ipv6: true
-    state: present
-    validate_certs: false
+- name: Debug nginx_reverse_proxy_enable
+  ansible.builtin.debug:
+    msg: "nginx_reverse_proxy_enable is {{ nginx_reverse_proxy_enable | default('not defined') }}"
+
+# The boolean nginx_reverse_proxy_enable is set in waal70.nginx_pm role
+- name: "Block for reverse proxy network creation"
+  when: nginx_reverse_proxy_enable | default(false)
+  block:
+    - name: "Ensure the shared network 'reverse-proxy' exists and that Portainer is connected to it"
+      community.docker.docker_network:
+        name: reverse-proxy
+        driver: bridge
+        enable_ipv6: true
+        state: present
+        connected:
+          - "{{ container_name }}"
+        appends: true
+        validate_certs: false
+# End block for reverse proxy network creation
 
 - name: Set fact for container state
   ansible.builtin.set_fact:
