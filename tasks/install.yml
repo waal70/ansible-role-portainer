@@ -15,6 +15,11 @@
     mode: "0644"
   when: container_recreate or not was_already_running
 
+- name: Override container image for enterprise edition if license key is set
+  ansible.builtin.set_fact:
+    container_image: "{{ container_image_ce }}"
+  when: portainer_license_key == "https://www.portainer.io/take-3"
+
 - name: Deploy Portainer to {{ inventory_hostname }} # noqa: args[module]
   community.docker.docker_container:
     name: "{{ container_name }}"
@@ -34,13 +39,38 @@
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - "{{ persistent_data_path }}:/data"
-  register: portainer_docker_deploy
-  when: container_recreate or not was_already_running
+  register: portainer_docker_deploy_ee
+  when: (container_recreate or not was_already_running) and portainer_license_key != "https://www.portainer.io/take-3"
+
+- name: Deploy Portainer to {{ inventory_hostname }} # noqa: args[module]
+  community.docker.docker_container:
+    name: "{{ container_name }}"
+    image: "{{ container_image }}"
+    labels: "{{ container_labels | default(omit) }}"
+    state: started
+    detach: true
+    recreate: "{{ container_recreate }}"
+    restart_policy: "{{ container_restart_policy }}"
+    links: "{{ container_links | default(omit) }}"
+    networks: "{{ container_network | default(omit, True) }}"
+    networks_cli_compatible: false # avoid ansible 2.12. Deprecation warning
+    image_name_mismatch: "recreate"
+    published_ports: "{{ container_ports | default(omit, True) }}"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - "{{ persistent_data_path }}:/data"
+  register: portainer_docker_deploy_ce
+  when: (container_recreate or not was_already_running) and portainer_license_key == "https://www.portainer.io/take-3"
+
+- name: "Refresh variable when deploy has taken place for Business Edition"
+  ansible.builtin.set_fact:
+    portainer_docker: "{{ portainer_docker_deploy_ee }}"
+  when: portainer_docker_deploy_ee.changed # noqa: no-handler
 
 - name: "Refresh variable when deploy has taken place"
   ansible.builtin.set_fact:
-    portainer_docker: "{{ portainer_docker_deploy }}"
-  when: portainer_docker_deploy.skipped is not defined
+    portainer_docker: "{{ portainer_docker_deploy_ce }}"
+  when: portainer_docker_deploy_ce.changed # noqa: no-handler
 
 - name: "Ensure presence of cifs-utils for volume mappings"
   ansible.builtin.package:

@@ -6,7 +6,9 @@ remove_persistent_data: false
 remove_existing_container: false
 persistent_data_path: /appdata/portainer
 # is portainer/portainer-ce:{{ version }} for community edition
-container_image: portainer/portainer-ee:{{ version }}
+container_image_ee: portainer/portainer-ee:{{ version }}
+container_image_ce: portainer/portainer-ce:{{ version }}
+container_image: "{{ container_image_ee }}"
 # may be omitted if you use community edition, however: 3 nodes are free
 portainer_license_key: "https://www.portainer.io/take-3"
 container_name: portainer

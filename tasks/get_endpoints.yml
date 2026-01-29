@@ -10,6 +10,10 @@
     endpoints:
       - { name: "{{ inventory_hostname }}", id: 1, url: "", publicurl: "{{ ansible_facts['default_ipv4'].address }}" }
 
+- name: "Debug endpoint and hostname"
+  ansible.builtin.debug:
+    msg: "Requested deploy on {{ endpoints }}"
+
 # - name: "Fail if the main endpoint is not present and inform the user"
 #   ansible.builtin.fail:
 #     msg: "The main Portainer server (homeserver) must be configured as a local endpoint."
@@ -22,7 +26,7 @@
   block:
     - name: Add each outpost server as an endpoint
       ansible.builtin.set_fact:
-        endpoints: "{{ endpoints + [{'name': host, 'id': 2, 'url': 'tcp://' + hostvars[host]['ansible_facts['default_ipv4']']['address'] + ':9001', 'publicurl': hostvars[host]['ansible_facts['default_ipv4']']['address']}] }}" # noqa: yaml[line-length]
+        endpoints: "{{ endpoints + [{'name': host, 'id': 2, 'url': 'tcp://' + hostvars[host].ansible_facts['default_ipv4'].address + ':9001', 'publicurl': hostvars[host].ansible_facts['default_ipv4'].address}] }}" # noqa: yaml[line-length]
       loop: "{{ groups['outpost'] }}"
       loop_control:
         loop_var: host
