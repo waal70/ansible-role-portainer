@@ -5,10 +5,14 @@
     state: absent
     networks: []
     force_kill: true
-  when: remove_existing_container
+  when: container_recreate | default(false)
 
 - name: Remove persistent data
   ansible.builtin.file:
     state: absent
     path: '{{ persistent_data_path.split(":") | first | string }}'
-  when: remove_persistent_data
+    force: true
+  when:
+    - stage == 'development'
+    - ansible_parent_role_names is not defined
+    - container_recreate | default(false)

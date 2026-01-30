@@ -19,8 +19,6 @@ Tasks in Role
 -------------
 
 - Ensure docker-py is present
-- Remove existing (Portainer) container [if ```remove_existing_container: true```]
-- Remove persistent (Portainer) data [if ```remove_persistent_data: true```]
 - Deploy Portainer container to host [define persistent_data_path]
 - Configure Admin user password
 - Generate authentication token

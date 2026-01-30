@@ -1,4 +1,8 @@
 ---
+- name: Debug endpoints fact
+  ansible.builtin.debug:
+    var: endpoints
+
 - name: "Register endpoints with Portainer"
   ansible.builtin.uri:
     url: "{{ portainer_endpoint }}/endpoints"
@@ -43,6 +47,16 @@
   with_items:
     - "{{ response.results }}"
 
+- name: Get endpoint_groups to determine if they exist
+  ansible.builtin.uri:
+    url: "{{ portainer_endpoint }}/endpoint_groups"
+    method: GET
+    validate_certs: false
+    return_content: true
+    headers:
+      Authorization: Bearer {{ (auth_token.content | from_json).jwt }}
+  register: existing_endpoint_groups
+
 - name: Create endpoint_group for the main server if they do not exist
   ansible.builtin.uri:
     url: "{{ portainer_endpoint }}/endpoint_groups"
@@ -57,6 +71,7 @@
       description: "Main Portainer Instance"
     status_code: [200, 409]
     validate_certs: false
+  when: "'Main server' not in (existing_endpoint_groups.json | map(attribute='Name') | list)"
 
 - name: Create endpoint_group for outpost servers if they do not exist
   ansible.builtin.uri:
@@ -72,4 +87,6 @@
       description: "Outpost Servers"
     status_code: [200, 409]
     validate_certs: false
-  when: outpost_online
+  when:
+    - outpost_online
+    - "'Outpost server' not in (existing_endpoint_groups.json | map(attribute='Name') | list)"
