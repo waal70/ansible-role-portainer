@@ -16,6 +16,8 @@ galaxy_info:
                 portaineragent
   ]
 
-dependencies: []
+dependencies: [
+  waal70.docker
+]
   # List your role dependencies here, one per line. Be sure to remove the '[]' above,
   # if you add dependencies to this list.
