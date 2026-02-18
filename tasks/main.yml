@@ -11,7 +11,13 @@
         - "{{ private_repo }}/{{ ansible_vault }}/{{ ansible_role_name }}-vars.yml"
       skip: true
 
-- name: "Gather stat for file"
+- name: "Assert that we have at least one designated host for Portainer"
+  ansible.builtin.assert:
+    that:
+      - hostvars[groups['portainer_primary'][0]] is defined
+    fail_msg: "You should have at least a portainer_primary in your inventory"
+
+- name: "Gather stat for marker that will let us skip over installation tasks"
   ansible.builtin.stat:
     path: /tmp/portainertje
   register: stat_result
@@ -38,25 +44,30 @@
 # instance is running there. It will however also install Portainer Agent on any
 # outpost servers defined in the inventory and manage stack installs on that satellite
 
-- name: "Set flag for (any) outpost online"
-  ansible.builtin.set_fact:
-    outpost_online: "{{ (groups['outpost'] is defined) and (groups['outpost'] | length > 0) }}"
-
-- name: Include clean-up tasks
+- name: "Include clean-up tasks"
   ansible.builtin.include_tasks: clean-up.yml
-  when: ('homeserver' in group_names) and not port_skip
-
-- name: Include installation tasks for main Portainer
-  ansible.builtin.include_tasks: install.yml
-  when: ('homeserver' in group_names) and not port_skip
-
-- name: "Determine presence of Portainer hosts"
-  ansible.builtin.include_tasks: gather_portainer.yml
   when: not port_skip
 
-- name: "Include installation tasks for Portainer Agent on outpost servers"
+- name: "Include installation tasks for main Portainer"
+  ansible.builtin.include_tasks: install.yml
+  when:
+    - not port_skip
+    - "'portainer_primary' in group_names"
+
+- name: "Include installation tasks for Portainer Agent"
   ansible.builtin.include_tasks: install-agent.yml
-  when: outpost_online and not port_skip
+  when:
+    - not port_skip
+    - "'portainer_agent' in group_names"
+
+# The main install leaves us with portainer_endpoint, but if we are re-running this role
+# that install is skipped. So we set the URL for Portainer always here:
+- name: "Set fact for Portainer management URL"
+  ansible.builtin.set_fact:
+    portainer_endpoint: "https://{{ hostvars[groups['portainer_primary'][0]].ansible_facts['default_ipv4'].address }}:{{ host_port }}/api"
+  when:
+    - portainer_endpoint is not defined
+    - not port_skip
 
 - name: "Login with username/password to generate authentication token, user: {{ admin_user }}"
   ansible.builtin.uri:
@@ -66,57 +77,41 @@
     body_format: json
     body: '{"Username": "{{ admin_user }}", "Password": "{{ admin_password }}"}'
     validate_certs: false
+    status_code:
+      - 200
   register: auth_token
   when: admin_user and admin_password is defined
-
-- name: "Check authentication response for {{ admin_user }}"
-  ansible.builtin.fail:
-    msg: "Failed to authenticate with Portainer API for user {{ admin_user }}"
-  when: "auth_token.status != 200"
 
 - name: "Get JWT token from authentication response"
   ansible.builtin.set_fact:
     jwt_token: "{{ auth_token.json.jwt }}"
-  when: auth_token.status == 200
 
-- name: Retrieve a list of already configured endpoints from Portainer
-  ansible.builtin.uri:
-    url: "{{ portainer_endpoint }}/endpoints"
-    method: GET
-    return_content: true
-    validate_certs: false
-    headers:
-      Authorization: Bearer {{ (auth_token.content | from_json).jwt }}
-  register: portainer_known_endpoints_raw
-  when: not port_skip
-
-- name: Save endpoints as fact
-  ansible.builtin.set_fact:
-    portainer_known_endpoints: "{{ portainer_known_endpoints_raw.json | map(attribute='Name') | list }}"
-    portainer_known_endpoint_ids: "{{ portainer_known_endpoints_raw.json | map(attribute='Id') | list }}"
-  when: not port_skip
-
-- name: "Include tasks to determine the list of existing endpoints, only needed when this is the homeserver"
+# Primary portainer instance is one (1) endpoint
+# Other endpoints are all the hosts in the portainer_agent group
+- name: "Include tasks to determine the list of existing endpoints"
   ansible.builtin.include_tasks: get_endpoints.yml
-  when: (portainer_known_endpoints | length -1) != (groups['outpost'] | length | default(0)) and not port_skip
+  when: not port_skip
 
 - name: Include tasks to add Portainer Agents for main node (=homeserver) only
-  ansible.builtin.include_tasks: endpoints.yml
-  when: (endpoints is not none) and not port_skip
+  ansible.builtin.include_tasks: set_endpoints.yml
+  when:
+    - endpoints is not none
+    - not port_skip
 
-- name: "Debug endpoint and hostname"
+- name: "Inform the user of the combination of variables"
   ansible.builtin.debug:
-    msg: "Requested deploy on {{ portainer_known_endpoints[endpoint_idx] }}, while running on host {{ inventory_hostname }}"
-  when: not port_skip
+    msg: "Requested actions for {{ portainer_known_endpoints[endpoint_idx] }}, while running on host {{ inventory_hostname }}"
 
-# Only proceed to stack deployment if we have the correct server instance
 - name: Incude tasks to add stacks to Portainer
   ansible.builtin.include_tasks: stacklooper.yml
-  when: (stack_list is defined and stack_list | length > 0) and (portainer_known_endpoints[endpoint_idx] == inventory_hostname)
+  when:
+    - stack_list is defined
+    - stack_list | length > 0
 
 - name: Run completed, so set the marker, but only if we are being called from another role
   ansible.builtin.file:
     path: /tmp/portainertje
     state: touch
     mode: '0644'
+    owner: "{{ ansible_user }}"
   when: not port_skip and ansible_parent_role_names is defined

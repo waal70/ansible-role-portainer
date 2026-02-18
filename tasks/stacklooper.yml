@@ -1,5 +1,4 @@
-# Design decision: if we are not deploying to the main portainer, we assume the last outpost in the list is the target
-- name: Create portainer stacks for the main instance
+- name: Create the requested stack(s) on the designated endpoint(s)
   ansible.builtin.include_tasks: create_stack.yml
   vars:
     portainer_api: "{{ portainer_endpoint }}"

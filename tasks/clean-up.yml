@@ -1,12 +1,27 @@
 ---
-- name: Remove existing container
+# Remove Portainer full edition for primary servers
+- name: Remove main Portainer docker container
   community.docker.docker_container:
     name: portainer
     state: absent
     networks: []
     force_kill: true
-  when: container_recreate | default(false)
+  when:
+    - container_recreate | default(false)
+    - "'portainer_primary' in group_names"
 
+- name: Remove Portainer Agent docker container
+  community.docker.docker_container:
+    name: portainer_agent
+    state: absent
+    networks: []
+    force_kill: true
+  when:
+    - container_recreate | default(false)
+    - "'portainer_agent' in group_names"
+
+# Only remove persistent data if we are in development
+# AND we are not being called from an include
 - name: Remove persistent data
   ansible.builtin.file:
     state: absent

@@ -2,7 +2,8 @@
 # Fix Andre January 2026: Added the Endpoint ID to narrow the check to the requested endpoint only
 - name: "Get stack information from Portainer for '{{ stack_name }}' on endpoint: {{ endpoint_id }}" # noqa: name[template]
   ansible.builtin.uri:
-    url: "{{ portainer_endpoint }}/stacks?filters={\"EndpointId\":{{ endpoint_id }}}"
+    # url: "{{ portainer_endpoint }}/stacks?filters={\"EndpointId\":{{ endpoint_id }}}"
+    url: "{{ portainer_endpoint }}/stacks"
     method: GET
     headers:
       Authorization: "Bearer {{ jwt_token }}"
@@ -10,18 +11,32 @@
   register: get_stack_response
   when: jwt_token is defined
 
+- name: "Condense the stack-information into a fact"
+  ansible.builtin.set_fact:
+    stackinfo: "{{ get_stack_response.json | community.general.json_query(stack_query) | first | default({}) }}"
+  vars:
+    stack_query: "[?Name=='{{ stack_name }}'].{Name: Name, Id: Id, EndpointId: EndpointId}"
+
+# In case we found info on this stack (stackinfo is set), but its EndpointId is not
+# the endpoint that is requested, we are possibly dealing with an Orphaned stack,
+# which is recoverable:
+- name: "Associating orphaned '{{ stack_name }}' with: {{ endpoint_id }}" # noqa: name[template]
+  ansible.builtin.uri:
+    url: "{{ portainer_endpoint }}/stacks/{{ stackinfo.Id }}/associate?endpointId={{ endpoint_id }}&orphanedRunning=true"
+    method: PUT
+    headers:
+      Authorization: "Bearer {{ jwt_token }}"
+    validate_certs: false
+  when:
+    - jwt_token is defined
+    - stackinfo.EndpointId | default(endpoint_id) != endpoint_id
+
 - name: "Check if the stack already exists - {{ stack_name }}"
   ansible.builtin.set_fact:
-    stack_not_exists: "{{ response_data | json_query('[?Name == `' + stack_name + '`]') | length <= 0 }}"
-    existing_stack_id: "{{ response_data | json_query('[?Name == `' + stack_name + '`].Id') | default('[0]') }}"
-  vars:
-    response_data: "{{ get_stack_response.json }}"
+    stack_not_exists: "{{ stackinfo == {} }}"
+    existing_stack_id: "{{ stackinfo.Id | default() }}"
 
-- name: Debug existing stack id
-  ansible.builtin.debug:
-    msg: "Existing id for '{{ stack_name }}' on Endpoint {{ endpoint_id }} = {{ existing_stack_id | first | default('Stack not found') }}"
-
-- name: "Create a stack in Portainer by the name of {{ stack_name }}"
+- name: "Creating a stack in Portainer by the name of {{ stack_name }}"
   ansible.builtin.uri:
     url: "{{ portainer_endpoint }}/stacks/create/standalone/string?endpointId={{ endpoint_id }}"
     method: POST
@@ -36,12 +51,16 @@
       stackFileContent: "{{ stack_compose }}"
     validate_certs: false
     timeout: 300 # Some stack creation can be quite time-consuming
+    status_code:
+      - 200
   register: create_stack_response
-  when: jwt_token is defined and (stack_not_exists | bool)
+  when:
+    - jwt_token is defined
+    - stack_not_exists
 
-- name: "Update a stack in Portainer by the name of {{ stack_name }}"
+- name: "Updating a stack in Portainer by the name of {{ stack_name }}"
   ansible.builtin.uri:
-    url: "{{ portainer_endpoint }}/stacks/{{ existing_stack_id | first }}?endpointId={{ endpoint_id }}"
+    url: "{{ portainer_endpoint }}/stacks/{{ existing_stack_id }}?endpointId={{ endpoint_id }}"
     method: PUT
     headers:
       Content-Type: "application/json"
@@ -54,12 +73,11 @@
       stackFileContent: "{{ stack_compose }}"
     validate_certs: false
     timeout: 300 # Some stack creation can be quite time-consuming
-  when: (jwt_token is defined) and ( existing_stack_id != '0') and not ( stack_not_exists | bool ) and ( stack_update | bool)
-
-- name: "Check stack creation response for {{ stack_name }}"
-  ansible.builtin.fail:
-    msg: "Failed to create stack in Portainer"
-  when: stack_not_exists and create_stack_response.status != 200
+  when:
+    - jwt_token is defined
+    - existing_stack_id != '0'
+    - not stack_not_exists
+    - stack_update
 
 - name: Block for post stack creation
   when: post_create_handler != ''

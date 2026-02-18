@@ -1,9 +1,5 @@
 ---
-- name: Debug endpoints fact
-  ansible.builtin.debug:
-    var: endpoints
-
-- name: "Register endpoints with Portainer"
+- name: "Register endpoints with Portainer, if not a known endpoint already"
   ansible.builtin.uri:
     url: "{{ portainer_endpoint }}/endpoints"
     method: POST
@@ -73,7 +69,7 @@
     validate_certs: false
   when: "'Main server' not in (existing_endpoint_groups.json | map(attribute='Name') | list)"
 
-- name: Create endpoint_group for outpost servers if they do not exist
+- name: Create endpoint_group for agents if it does not already exist
   ansible.builtin.uri:
     url: "{{ portainer_endpoint }}/endpoint_groups"
     method: POST
@@ -88,5 +84,4 @@
     status_code: [200, 409]
     validate_certs: false
   when:
-    - outpost_online
     - "'Outpost server' not in (existing_endpoint_groups.json | map(attribute='Name') | list)"
