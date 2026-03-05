@@ -32,7 +32,7 @@ do_stack_update: true
 
 # Portainer version
 # Note that 'latest' will get you 2.19.x - the tag seems to be behind
-version: 2.37.0
+version: 2.39.0
 
 # Portainer Agent version
 # Specific versions are preferred. You can also put "latest" here
