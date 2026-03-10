@@ -14,8 +14,8 @@
 - name: "Assert that we have at least one designated host for Portainer"
   ansible.builtin.assert:
     that:
-      - hostvars[groups['portainer_primary'][0]] is defined
-    fail_msg: "You should have at least a portainer_primary in your inventory"
+      - hostvars[groups['portainer_server'][0]] is defined
+    fail_msg: "You should have at least a portainer_server in your inventory"
 
 - name: "Gather stat for marker that will let us skip over installation tasks"
   ansible.builtin.stat:
@@ -52,7 +52,7 @@
   ansible.builtin.include_tasks: install.yml
   when:
     - not port_skip
-    - "'portainer_primary' in group_names"
+    - "'portainer_server' in group_names"
 
 - name: "Include installation tasks for Portainer Agent"
   ansible.builtin.include_tasks: install-agent.yml
@@ -62,9 +62,10 @@
 
 # The main install leaves us with portainer_endpoint, but if we are re-running this role
 # that install is skipped. So we set the URL for Portainer always here:
+# Please note that it will take the first host from the portainer_server group, so if you have more than one, change this code!
 - name: "Set fact for Portainer management URL"
   ansible.builtin.set_fact:
-    portainer_endpoint: "https://{{ hostvars[groups['portainer_primary'][0]].ansible_facts['default_ipv4'].address }}:{{ host_port }}/api"
+    portainer_endpoint: "https://{{ hostvars[groups['portainer_server'][0]].ansible_facts['default_ipv4'].address }}:{{ host_port }}/api"
   when:
     - portainer_endpoint is not defined
     - not port_skip

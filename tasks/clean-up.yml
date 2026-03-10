@@ -8,7 +8,7 @@
     force_kill: true
   when:
     - container_recreate | default(false)
-    - "'portainer_primary' in group_names"
+    - "'portainer_server' in group_names"
 
 - name: Remove Portainer Agent docker container
   community.docker.docker_container:

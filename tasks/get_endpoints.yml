@@ -28,11 +28,12 @@
 
 # Note that adding the id will not determine the endpoint's actual id!
 # It is just there to preclude it being interpreted as the main (local) endpoint
+# Bugfix 2026-03: the group-name should now be portainer_agent
 - name: Block to add Portainer Agents as endpoints
   block:
     - name: Add each Portainer Agent as an endpoint
       ansible.builtin.set_fact:
         endpoints: "{{ endpoints + [{'name': host, 'id': 2, 'url': 'tcp://' + hostvars[host].ansible_facts['default_ipv4'].address + ':9001', 'publicurl': hostvars[host].ansible_facts['default_ipv4'].address}] }}" # noqa: yaml[line-length]
-      loop: "{{ groups['outpost'] }}"
+      loop: "{{ groups['portainer_agent'] }}"
       loop_control:
         loop_var: host

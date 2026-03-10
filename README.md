@@ -3,7 +3,21 @@ ansible-role-portainer
 
 Portainer - the coolest UI for Docker http://portainer.io/
 
-This role installs Portainer using Docker container. Adopted by waal70 to perform the following behavior:
+This role installs Portainer using Docker container.
+A host can be in one of two groups: portainer_server OR portainer_agent.
+A host in portainer_server will have the portainer docker installed. Environments will be created to point to portainer_agent instances.
+Although it should work, please ensure you have only ONE host designated portainer_server.
+
+A host in portainer_agent will have the portainer_agent installed. Its IP-address will be used to create an environment in the portainer_server.
+
+Portainer's model is that all deployments should go through the main Portainer. A parameter will allow you to specify which host (environment) you are targeting.
+This is implemented by the variable ```endpoint_idx```. If not specified or 0 (zero): the stack will be deployed to the portainer_server.
+If 1 (one), it will target the first portainer_agent, if two it will target the second portainer_agent host, and so on.
+
+Also NOTE that if you are running a limited playbook (--limit ) specified, you will run into errors if that limit does not include the portainer_server.
+The current TODO is to fix that :)
+
+Adopted by waal70 to perform the following behavior:
 
 - Will (re-)install portainer on the host, if needed
 - If role_included with ```stack_list``` specified, deploys the containers from stack_list
