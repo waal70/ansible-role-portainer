@@ -26,7 +26,9 @@
     portainer_env_snippet:
       PORTAINER_LICENSE_KEY: "{{ portainer_license_key }}"
       ANSIBLE_TARGET: "Ansible determined Enterprise Edition"
-  when: portainer_license_key != "https://www.portainer.io/take-3"
+  when:
+    - portainer_license_key != "https://www.portainer.io/take-3"
+    - ansible_facts['virtualization_role'] == 'host' # Bob: deze conditie verwijderen of veranderen naar == 'guest'!
 
 - name: Deploy Portainer to {{ inventory_hostname }} # noqa: args[module]
   community.docker.docker_container:
