@@ -12,6 +12,7 @@
       - /var/run/docker.sock:/var/run/docker.sock
       - /var/lib/docker/volumes:/var/lib/docker/volumes
       - /:/host
+  delegate_to: "{{ agent_target }}"
 
 - name: "Ensure the shared network 'reverse-proxy' exists on all outposts"
   community.docker.docker_network:
@@ -20,6 +21,7 @@
     enable_ipv6: true
     state: present
     validate_certs: false
+  delegate_to: "{{ agent_target }}"
 
 # I define Portainer Agent mutually exclusive with main Portainer
 - name: Remove erroneous Portainer main container
@@ -28,3 +30,4 @@
     state: absent
     networks: []
     force_kill: true
+  delegate_to: "{{ agent_target }}"

@@ -29,11 +29,13 @@
 # Note that adding the id will not determine the endpoint's actual id!
 # It is just there to preclude it being interpreted as the main (local) endpoint
 # Bugfix 2026-03: the group-name should now be portainer_agent
+# Bugfix 2026-03: only include the endpoints that are appropriate for this host (virtualization_role should be equal)
 - name: Block to add Portainer Agents as endpoints
   block:
     - name: Add each Portainer Agent as an endpoint
       ansible.builtin.set_fact:
         endpoints: "{{ endpoints + [{'name': host, 'id': 2, 'url': 'tcp://' + hostvars[host].ansible_facts['default_ipv4'].address + ':9001', 'publicurl': hostvars[host].ansible_facts['default_ipv4'].address}] }}" # noqa: yaml[line-length]
-      loop: "{{ groups['portainer_agent'] }}"
+      loop: "{{ groups['portainer_agent'] | default([]) }}"
       loop_control:
         loop_var: host
+      when: hostvars[host].ansible_facts['virtualization_role'] == ansible_facts['virtualization_role']

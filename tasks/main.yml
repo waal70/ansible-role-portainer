@@ -54,11 +54,15 @@
     - not port_skip
     - "'portainer_server' in group_names"
 
-- name: "Include installation tasks for Portainer Agent"
+- name: "Ensure Portainer Agents are installed on all hosts in portainer_agent"
   ansible.builtin.include_tasks: install-agent.yml
+  vars:
+    agent_target: "{{ item }}"
+  with_items:
+    - "{{ groups['portainer_agent'] | default([]) }}"
   when:
     - not port_skip
-    - "'portainer_agent' in group_names"
+    - hostvars[item].ansible_facts['virtualization_role'] == ansible_facts['virtualization_role']
 
 # The main install leaves us with portainer_endpoint, but if we are re-running this role
 # that install is skipped. So we set the URL for Portainer always here:
@@ -66,8 +70,11 @@
 - name: "Set fact for Portainer management URL"
   ansible.builtin.set_fact:
     portainer_endpoint: "https://{{ hostvars[groups['portainer_server'][0]].ansible_facts['default_ipv4'].address }}:{{ host_port }}/api"
+  with_items:
+    - "{{ groups['portainer_server'] | default([]) }}"
   when:
     - portainer_endpoint is not defined
+    - hostvars[item].ansible_facts['virtualization_role'] == ansible_facts['virtualization_role']
     - not port_skip
 
 - name: "Login with username/password to generate authentication token, user: {{ admin_user }}"
