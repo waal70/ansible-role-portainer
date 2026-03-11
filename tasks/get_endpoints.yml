@@ -38,4 +38,4 @@
       loop: "{{ groups['portainer_agent'] | default([]) }}"
       loop_control:
         loop_var: host
-      when: hostvars[host].ansible_facts['virtualization_role'] == ansible_facts['virtualization_role']
+      when: hostvars[host].ansible_facts['virtualization_role'] | default('no_facts_gathered') == ansible_facts['virtualization_role']
