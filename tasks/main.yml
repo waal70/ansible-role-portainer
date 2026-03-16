@@ -17,14 +17,13 @@
       - hostvars[groups['portainer_server'][0]] is defined
     fail_msg: "You should have at least a portainer_server in your inventory"
 
-- name: "Gather stat for marker that will let us skip over installation tasks"
-  ansible.builtin.stat:
-    path: /tmp/portainertje
-  register: stat_result
-
-- name: "Set fact for Portainer run completion"
+- name: "Check the existence of jwt_token. If it is set this early in the role, it means we have a valid token still (multiple runs) and we can skip install"
   ansible.builtin.set_fact:
-    port_skip: "{{ stat_result.stat.exists }}"
+    port_skip: "{{ jwt_token is defined | bool }}"
+
+- name: "Debug what we found in terms of jwt_token"
+  ansible.builtin.debug:
+    msg: "JWT_TOKEN is found to be: {{ port_skip }}"
 
 # Call this role as follows:
 # - name: "Include role to deploy homepage-stack to Portainer"
@@ -115,11 +114,3 @@
   when:
     - stack_list is defined
     - stack_list | length > 0
-
-- name: Run completed, so set the marker, but only if we are being called from another role
-  ansible.builtin.file:
-    path: /tmp/portainertje
-    state: touch
-    mode: '0644'
-    owner: "{{ ansible_user }}"
-  when: not port_skip and ansible_parent_role_names is defined
