@@ -21,10 +21,6 @@
   ansible.builtin.set_fact:
     port_skip: "{{ jwt_token is defined | bool }}"
 
-- name: "Debug what we found in terms of jwt_token"
-  ansible.builtin.debug:
-    msg: "JWT_TOKEN is found to be: {{ port_skip }}"
-
 # Call this role as follows:
 # - name: "Include role to deploy homepage-stack to Portainer"
 #  ansible.builtin.include_role:
