@@ -72,6 +72,16 @@
     - hostvars[item].ansible_facts['virtualization_role'] | default('no_facts_gathered') == ansible_facts['virtualization_role']
     - not port_skip
 
+# To deal with cases you are targeting only an Agent server, you may define fallback_portainer_fqdn
+# and it will try to use that as the main Portainer endpoint
+# Because when only targeting an Agent server groups['portainer_server'] will be empty...
+- name: "If portainer_endpoint is still not set, try fallback_portainer_fqdn, when set"
+  ansible.builtin.set_fact:
+    portainer_endpoint: "https://{{ fallback_portainer_fqdn }}/api"
+  when:
+    - portainer_endpoint is not defined
+    - fallback_portainer_fqdn is defined
+
 - name: "Login with username/password to generate authentication token, user: {{ admin_user }}"
   ansible.builtin.uri:
     url: "{{ portainer_endpoint }}/auth"
