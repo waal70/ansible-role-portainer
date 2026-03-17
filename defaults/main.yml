@@ -2,7 +2,7 @@
 # Role settings
 configure_settings: true
 configure_registry: false
-persistent_data_path: /appdata/portainer
+persistent_data_path: "{{ service_data }}"
 # is portainer/portainer-ce:{{ version }} for community edition
 # default is community edition
 container_image_ee: portainer/portainer-ee:{{ version }}
