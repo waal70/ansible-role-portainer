@@ -12,7 +12,7 @@
   ansible.builtin.file:
     path: "{{ persistent_data_path }}"
     state: directory
-    mode: "0644"
+    mode: "0755"
   when: container_recreate or not was_already_running
 
 - name: Set environment snippet for Portainer
